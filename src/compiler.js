@@ -341,6 +341,7 @@ var Compiler = Object.extend({
         this.emit('var ' + arr + ' = ');
         this._compileExpression(node.arr, frame);
         this.emitLine(';');
+        this.emitLine('frame.set("loop.first", true);');
 
         if(node.name instanceof nodes.Array) {
             // key/value iteration
@@ -360,12 +361,13 @@ var Compiler = Object.extend({
             this.emitLine('frame.set("' + val.value + '", ' + v + ');');
             this.emitLine('frame.set("loop.index", ' + i + ' + 1);');
             this.emitLine('frame.set("loop.index0", ' + i + ');');
-            this.emitLine('frame.set("loop.first", ' + i + ' === 0);');
         }
         else {
             var v = this.tmpid();
 
             frame.set(node.name.value, v);
+
+            this.emitLine('frame.set("loop.length", ' + arr + '.length);');
 
             this.emitLine('for(var ' + i + '=0; ' + i + ' < ' + arr + '.length; ' +
                           i + '++) {');
@@ -376,12 +378,11 @@ var Compiler = Object.extend({
             this.emitLine('frame.set("loop.index0", ' + i + ');');
             this.emitLine('frame.set("loop.revindex", ' + arr + '.length - ' + i + ');');
             this.emitLine('frame.set("loop.revindex0", ' + arr + '.length - ' + i + ' - 1);');
-            this.emitLine('frame.set("loop.first", ' + i + ' === 0);');
             this.emitLine('frame.set("loop.last", ' + i + ' === ' + arr + '.length - 1);');
-            this.emitLine('frame.set("loop.length", ' + arr + '.length);');
         }
 
         this.compile(node.body, frame);
+        this.emitLine('frame.set("loop.first", false);');
         this.emitLine('}');
 
         this.emitLine('frame = frame.pop();');
