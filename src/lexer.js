@@ -53,7 +53,7 @@ function Tokenizer(str) {
     this.in_code = false;
 }
 
-Tokenizer.prototype.nextToken = function() {
+var nextToken = Tokenizer.prototype.nextToken = function() {
     var lineno = this.lineno;
     var colno = this.colno;
 
@@ -219,6 +219,12 @@ Tokenizer.prototype.nextToken = function() {
 
     throw new Error("Could not parse text");
 };
+/*
+Tokenizer.prototype.nextToken = function() {
+    var out = nextToken.apply(this, arguments);
+    console.log(out);
+    return out;
+};*/
 
 Tokenizer.prototype.parseString = function(delimiter) {
     this.forward();
