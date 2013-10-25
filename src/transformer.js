@@ -9,7 +9,7 @@ function gensym() {
 function mapCOW(arr, func) {
     var res = null;
 
-    for(var i=0; i<arr.length; i++) {
+    for(var i = 0; i < arr.length; i++) {
         var item = func(arr[i]);
 
         if(item !== arr[i]) {
@@ -22,6 +22,35 @@ function mapCOW(arr, func) {
     }
 
     return res || arr;
+}
+
+function walkNodeList(ast, func, depthFirst) {
+    var children = mapCOW(ast.children, function(node) {
+        return walk(node, func, depthFirst);
+    });
+
+    if(children !== ast.children) {
+        return new nodes[ast.typename](ast.lineno, ast.colno, children);
+    }
+
+    return ast;
+}
+
+function walkCallExtension(ast, func, depthFirst) {
+    var args = walk(ast.args, func, depthFirst);
+
+    var contentArgs = mapCOW(ast.contentArgs, function(node) {
+        return walk(node, func, depthFirst);
+    });
+
+    if(args !== ast.args || contentArgs !== ast.contentArgs) {
+        return new nodes[ast.typename](ast.extName,
+                                      ast.prop,
+                                      args,
+                                      contentArgs);
+    }
+
+    return ast;
 }
 
 function walk(ast, func, depthFirst) {
@@ -38,27 +67,10 @@ function walk(ast, func, depthFirst) {
     }
 
     if(ast instanceof nodes.NodeList) {
-        var children = mapCOW(ast.children, function(node) {
-            return walk(node, func, depthFirst);
-        });
-
-        if(children !== ast.children) {
-            ast = new nodes[ast.typename](ast.lineno, ast.colno, children);
-        }
+        ast = walkNodeList(ast, func, depthFirst);
     }
     else if(ast instanceof nodes.CallExtension) {
-        var args = walk(ast.args, func, depthFirst);
-
-        var contentArgs = mapCOW(ast.contentArgs, function(node) {
-            return walk(node, func, depthFirst);
-        });
-        
-        if(args !== ast.args || contentArgs !== ast.contentArgs) {
-            ast = new nodes[ast.typename](ast.extName,
-                                          ast.prop,
-                                          args,
-                                          contentArgs);
-        }
+        ast = walkCallExtension(ast, func, depthFirst);
     }
     else {
         var props = ast.fields.map(function(field) {
@@ -157,7 +169,7 @@ function liftSuper(ast) {
 
         blockNode.body = walk(blockNode.body, function(node) {
             if(node instanceof nodes.FunCall &&
-               node.name.value == 'super') {
+               node.name.value === 'super') {
                 hasSuper = true;
                 return new nodes.Symbol(node.lineno, node.colno, symbol);
             }
@@ -191,7 +203,7 @@ function convertStatements(ast) {
         });
 
         if(async) {
-	        if(node instanceof nodes.If) {
+            if(node instanceof nodes.If) {
                 return new nodes.IfAsync(
                     node.lineno,
                     node.colno,
@@ -217,7 +229,7 @@ function cps(ast, asyncFilters) {
     return convertStatements(liftSuper(liftFilters(ast, asyncFilters)));
 }
 
-function transform(ast, asyncFilters, name) {
+function transform(ast, asyncFilters) {
     return cps(ast, asyncFilters || []);
 }
 
