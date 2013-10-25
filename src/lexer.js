@@ -1,5 +1,3 @@
-var lib = require('./lib');
-
 var whitespaceChars = " \n\t\r";
 var delimChars = "()[]{}%*-+/#,:|.<>=!";
 var intChars = "0123456789";
@@ -67,11 +65,11 @@ Tokenizer.prototype.nextToken = function() {
             // We have nothing else to parse
             return null;
         }
-        else if(cur == "\"" || cur == "'") {
+        else if(cur === '"' || cur === "'") {
             // We've hit a string
             return token(TOKEN_STRING, this.parseString(cur), lineno, colno);
         }
-        else if((tok = this._extract(whitespaceChars))) {
+        else if(tok = this._extract(whitespaceChars)) {
             // We hit some whitespace
             return token(TOKEN_WHITESPACE, tok, lineno, colno);
         }
@@ -124,7 +122,7 @@ Tokenizer.prototype.nextToken = function() {
             tok = this._extractUntil(whitespaceChars + delimChars);
 
             if(tok.match(/^[-+]?[0-9]+$/)) {
-                if(this.current() == '.') {
+                if(this.current() === '.') {
                     this.forward();
                     var dec = this._extract(intChars);
                     return token(TOKEN_FLOAT, tok + '.' + dec, lineno, colno);
@@ -188,7 +186,7 @@ Tokenizer.prototype.nextToken = function() {
                 if((this._matches(BLOCK_START) ||
                     this._matches(VARIABLE_START) ||
                     this._matches(COMMENT_START)) &&
-                  !in_comment) {
+                   !in_comment) {
                     // If it is a start tag, stop looping
                     break;
                 }
@@ -224,14 +222,12 @@ Tokenizer.prototype.nextToken = function() {
 Tokenizer.prototype.parseString = function(delimiter) {
     this.forward();
 
-    var lineno = this.lineno;
-    var colno = this.colno;
     var str = "";
 
     while(!this.is_finished() && this.current() != delimiter) {
         var cur = this.current();
 
-        if(cur == "\\") {
+        if(cur === "\\") {
             this.forward();
             switch(this.current()) {
             case "n": str += "\n"; break;
@@ -293,8 +289,8 @@ Tokenizer.prototype._extractMatching = function (breakOnMatch, charString) {
     var first = charString.indexOf(this.current());
 
     // Only proceed if the first character doesn't meet our condition
-    if((breakOnMatch && first == -1) ||
-       (!breakOnMatch && first != -1)) {
+    if((breakOnMatch && first === -1) ||
+       (!breakOnMatch && first !== -1)) {
         var t = this.current();
         this.forward();
 
@@ -302,8 +298,8 @@ Tokenizer.prototype._extractMatching = function (breakOnMatch, charString) {
         // breaking char
         var idx = charString.indexOf(this.current());
 
-        while(((breakOnMatch && idx == -1) ||
-               (!breakOnMatch && idx != -1)) && !this.is_finished()) {
+        while(((breakOnMatch && idx === -1) ||
+               (!breakOnMatch && idx !== -1)) && !this.is_finished()) {
             t += this.current();
             this.forward();
 
@@ -321,7 +317,7 @@ Tokenizer.prototype.is_finished = function() {
 };
 
 Tokenizer.prototype.forwardN = function(n) {
-    for(var i=0; i<n; i++) {
+    for(var i = 0; i < n; i++) {
         this.forward();
     }
 };
@@ -329,7 +325,7 @@ Tokenizer.prototype.forwardN = function(n) {
 Tokenizer.prototype.forward = function() {
     this.index++;
 
-    if(this.previous() == "\n") {
+    if(this.previous() === "\n") {
         this.lineno++;
         this.colno = 0;
     }
@@ -339,19 +335,19 @@ Tokenizer.prototype.forward = function() {
 };
 
 Tokenizer.prototype.backN = function(n) {
-    for(var i=0; i<n; i++) {
-        self.back();
+    for(var i = 0; i < n; i++) {
+        this.back();
     }
 };
 
 Tokenizer.prototype.back = function() {
     this.index--;
 
-    if(this.current() == "\n") {
+    if(this.current() === "\n") {
         this.lineno--;
 
-        var idx = this.src.lastIndexOf("\n", this.index-1);
-        if(idx == -1) {
+        var idx = this.src.lastIndexOf("\n", this.index - 1);
+        if(idx === -1) {
             this.colno = this.index;
         }
         else {
@@ -371,7 +367,7 @@ Tokenizer.prototype.current = function() {
 };
 
 Tokenizer.prototype.previous = function() {
-    return this.str.charAt(this.index-1);
+    return this.str.charAt(this.index - 1);
 };
 
 module.exports = {
