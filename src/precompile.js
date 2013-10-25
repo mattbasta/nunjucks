@@ -17,6 +17,32 @@ function precompileString(str, opts) {
     return precompile(str, opts);
 }
 
+function getTemplates(dir) {
+    var files = fs.readdirSync(dir);
+    var templates = [];
+
+    for(var i = 0; i < files.length; i++) {
+        var filepath = path.join(dir, files[i]);
+        var subpath = filepath.substr(path.join(input, '/').length);
+        var stat = fs.statSync(filepath);
+
+        if(stat && stat.isDirectory()) {
+            subpath += '/';
+            if (!match(subpath, opts.exclude)) {
+                var subtemplates = getTemplates(filepath);
+                for (var i = 0; i < subtemplates.length; i++) {
+                    templates.push(subtemplates[i]);
+                }
+            }
+        }
+        else if(match(subpath, opts.include)) {
+            templates.push(filepath);
+        }
+    }
+
+    return templates;
+}
+
 function precompile(input, opts) {
     // The following options are available:
     //
@@ -30,8 +56,6 @@ function precompile(input, opts) {
 
     opts = opts || {};
     var env = opts.env || new Environment([]);
-    var asyncFilters = env.asyncFilters;
-    var extensions = env.extensionsList;
 
     var pathStats = fs.existsSync(input) && fs.statSync(input);
     var output = '';
@@ -54,31 +78,9 @@ function precompile(input, opts) {
                            opts.asFunction);
     }
     else if(pathStats.isDirectory()) {
-        var templates = [];
+        var templates = getTemplates(input);
 
-        function addTemplates(dir) {
-            var files = fs.readdirSync(dir);
-
-            for(var i=0; i<files.length; i++) {
-                var filepath = path.join(dir, files[i]);
-                var subpath = filepath.substr(path.join(input, '/').length);
-                var stat = fs.statSync(filepath);
-
-                if(stat && stat.isDirectory()) {
-                    subpath += '/';
-                    if (!match(subpath, opts.exclude)) {
-                        addTemplates(filepath);
-                    }
-                }
-                else if(match(subpath, opts.include)) {
-                    templates.push(filepath);
-                }
-            }
-        }
-
-        addTemplates(input);
-
-        for(var i=0; i<templates.length; i++) {
+        for(var i = 0; i < templates.length; i++) {
             var name = templates[i].replace(path.join(input, '/'), '');
 
             try {
@@ -135,4 +137,4 @@ function _precompile(str, name, env, asFunction) {
 module.exports = {
     precompile: precompile,
     precompileString: precompileString
-}
+};
