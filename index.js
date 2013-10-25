@@ -1,11 +1,9 @@
-
 var lib = require('./src/lib');
 var env = require('./src/environment');
 var compiler = require('./src/compiler');
 var parser = require('./src/parser');
 var lexer = require('./src/lexer');
 var runtime = require('./src/runtime');
-var Loader = require('./src/loader');
 var loaders = require('./src/loaders');
 var precompile = require('./src/precompile');
 
@@ -42,21 +40,17 @@ module.exports.configure = function(templatesPath, opts) {
     return e;
 };
 
-module.exports.render = function(name, ctx, cb) {
-    if(!e) {
-        module.exports.configure();
-    }
+function wrap(func_name) {
+    return function() {
+        if(!e) {
+            module.exports.configure();
+        }
+        return e[func_name].apply(this, arguments);
+    };
+}
 
-    return e.render(name, ctx, cb);
-};
-
-module.exports.renderString = function(src, ctx, cb) {
-    if(!e) {
-        module.exports.configure();
-    }
-
-    return e.renderString(src, ctx, cb);
-};
+module.exports.render = wrap('render');
+module.exports.renderString = wrap('renderString');
 
 if(precompile) {
     module.exports.precompile = precompile.precompile;
